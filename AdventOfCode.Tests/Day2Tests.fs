@@ -26,5 +26,9 @@ let ``Overwriting a terminal op code reaches expected end state``() =
     runProgramAndCheckFinalState([1; 1; 1; 4; 99; 5; 6; 0; 99], [30; 1; 1; 4; 2; 5; 6; 0; 99])
 
 [<Fact>]
-let ``Correctly solves puzzle input``() = 
+let ``Correctly solves puzzle input for part 1``() = 
     Assert.Equal(2890696, computeDay2Part1Answer())
+
+[<Fact>]
+let ``correctly solves part 2``() =
+    Assert.Equal(8226, computeDay2Part2Answer())

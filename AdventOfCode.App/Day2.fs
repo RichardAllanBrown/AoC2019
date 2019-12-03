@@ -54,11 +54,27 @@ let runIntcode(program: int list): int =
     let completedProgram = runToCompletion(initialState)    
     getFinalValue(completedProgram)
 
-let computeDay2Part1Answer(): int =
+type CommandInput = { noun: int; verb: int }
+
+let runCommand(command: CommandInput): int =
     Utils.readInputFile("./input/Day2.txt")
     |> List.head 
     |> Utils.splitLine
     |> List.map(int)
-    |> updateElementAt(1, 12)
-    |> updateElementAt(2, 2)
+    |> updateElementAt(1, command.noun)
+    |> updateElementAt(2, command.verb)
     |> runIntcode
+
+let computeDay2Part1Answer(): int = runCommand({ noun = 12; verb = 2 })
+
+let computeNounVerbHash(command: CommandInput): int = 100 * command.noun + command.verb
+
+let computeDay2Part2Answer(): int =
+    let inputsToTry = [
+        for n in 0..99 do
+        for v in 0..99 do
+        yield { noun = n; verb = v }
+    ]
+    inputsToTry
+    |> List.find(fun (command) -> runCommand(command) = 19690720)
+    |> computeNounVerbHash
