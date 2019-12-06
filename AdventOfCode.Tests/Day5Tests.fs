@@ -28,3 +28,7 @@ let ``Overwriting a terminal op code reaches expected end state``() =
 [<Fact>]
 let ``Correctly solves puzzle input for part 1``() = 
     Assert.Equal(5346030, computeDay5Part1Answer())
+
+[<Fact>]
+let ``Correctly solves puzzle input for part 2``() = 
+    Assert.Equal(513116, computeDay5Part2Answer())

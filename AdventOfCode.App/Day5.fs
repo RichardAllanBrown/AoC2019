@@ -16,6 +16,10 @@ type OpCode =
     | Multiply
     | ReadInput
     | WriteOutput
+    | JumpIfTrue
+    | JumpIfFalse
+    | LessThan
+    | Equals
     | Halt
 
 module OpCode = 
@@ -25,6 +29,10 @@ module OpCode =
         | 2 -> Multiply
         | 3 -> ReadInput
         | 4 -> WriteOutput
+        | 5 -> JumpIfTrue
+        | 6 -> JumpIfFalse
+        | 7 -> LessThan
+        | 8 -> Equals
         | 99 -> Halt
         | _ -> invalidArg "rawCode" "Invalid op code" 
 
@@ -84,6 +92,32 @@ let private executeWriteOutput(inputMode: ParameterMode)(s: ComputerState): Comp
     let valueToOutput = getValue(inputMode, 1)(s)
     { Input = s.Input; Program = s.Program; Output = Some(valueToOutput); Position = s.Position + 2 }
 
+let private executeJumpIfTrue(inputMode: ParameterMode, pointerArgMode: ParameterMode)(s: ComputerState): ComputerState =
+    let newPosition = 
+        match getValue(inputMode, 1)(s) with
+        | 0 -> s.Position + 3
+        | _ -> getValue(pointerArgMode, 2)(s)
+    { Input = s.Input; Program = s.Program; Output = s.Output; Position = newPosition }
+
+let private executeJumpIfFalse(inputMode: ParameterMode, pointerArgMode: ParameterMode)(s: ComputerState): ComputerState =
+    let newPosition = 
+        match getValue(inputMode, 1)(s) with
+        | 0 -> getValue(pointerArgMode, 2)(s)
+        | _ -> s.Position + 3
+    { Input = s.Input; Program = s.Program; Output = s.Output; Position = newPosition }
+
+let private executeLessThan(inputAMode: ParameterMode, inputBMode: ParameterMode, outputMode: ParameterMode)(s: ComputerState): ComputerState =
+    let inputA = getValue(inputAMode, 1)(s)
+    let inputB = getValue(inputBMode, 2)(s)
+    let newProgram = putValue(outputMode, 3, if (inputA < inputB) then 1 else 0)(s)
+    { Input = s.Input; Program = newProgram; Output = s.Output; Position = s.Position + 4 }
+
+let private executeEquals(inputAMode: ParameterMode, inputBMode: ParameterMode, outputMode: ParameterMode)(s: ComputerState): ComputerState =
+    let inputA = getValue(inputAMode, 1)(s)
+    let inputB = getValue(inputBMode, 2)(s)
+    let newProgram = putValue(outputMode, 3, if (inputA = inputB) then 1 else 0)(s)
+    { Input = s.Input; Program = newProgram; Output = s.Output; Position = s.Position + 4 }
+
 let computeNextState(current: ComputerState): ComputerState =
     let currentInstruction = parseInstruction(current.Program.Item(current.Position));
     match currentInstruction with
@@ -95,6 +129,14 @@ let computeNextState(current: ComputerState): ComputerState =
         executeReadInput(outputMode)(current)
     | { OpCode = WriteOutput; FirstArgMode = inputMode } ->
         executeWriteOutput(inputMode)(current)
+    | { OpCode = JumpIfTrue; FirstArgMode = inputMode; SecondArgMode = pointerArgMode } ->
+        executeJumpIfTrue(inputMode, pointerArgMode)(current)
+    | { OpCode = JumpIfFalse; FirstArgMode = inputMode; SecondArgMode = pointerArgMode } ->
+        executeJumpIfFalse(inputMode, pointerArgMode)(current)
+    | { OpCode = LessThan; FirstArgMode = inputAMode; SecondArgMode = inputBMode; ThirdArgMode = outputMode } ->
+        executeLessThan(inputAMode, inputBMode, outputMode)(current)
+    | { OpCode = Equals; FirstArgMode = inputAMode; SecondArgMode = inputBMode; ThirdArgMode = outputMode } ->
+        executeEquals(inputAMode, inputBMode, outputMode)(current)
     | { OpCode = Halt } -> current
 
 let rec runToCompletion(initial: ComputerState): ComputerState list =
@@ -116,3 +158,10 @@ let computeDay5Part1Answer(): int =
     |> Utils.splitLine
     |> List.map(int)
     |> runIntcode(1)
+    
+let computeDay5Part2Answer(): int =
+    Utils.readInputFile("./input/Day5.txt")
+    |> List.head 
+    |> Utils.splitLine
+    |> List.map(int)
+    |> runIntcode(5)
