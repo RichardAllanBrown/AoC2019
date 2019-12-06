@@ -71,18 +71,17 @@ let private putValue(m: ParameterMode, offset: int, newValue: int)(s: ComputerSt
     match m with
     | Immediate -> Utils.updateElementAt(outIndex, newValue)(s.Program)
     | Position -> Utils.updateElementAt(s.Program.Item(outIndex), newValue)(s.Program)
-
-let private executeAdd(inputAMode: ParameterMode, inputBMode: ParameterMode, outputMode: ParameterMode)(s: ComputerState): ComputerState =
+    
+let private execute2To1Instruction(f: int -> int -> int)(inputAMode: ParameterMode, inputBMode: ParameterMode, outputMode: ParameterMode)(s: ComputerState): ComputerState =
     let inputA = getValue(inputAMode, 1)(s)
     let inputB = getValue(inputBMode, 2)(s)
-    let newProgram = putValue(outputMode, 3, inputA + inputB)(s)
+    let result = f(inputA)(inputB)
+    let newProgram = putValue(outputMode, 3, result)(s)
     { Input = s.Input; Program = newProgram; Output = s.Output; Position = s.Position + 4 }
 
-let private executeMultiply(inputAMode: ParameterMode, inputBMode: ParameterMode, outputMode: ParameterMode)(s: ComputerState): ComputerState =
-    let inputA = getValue(inputAMode, 1)(s)
-    let inputB = getValue(inputBMode, 2)(s)
-    let newProgram = putValue(outputMode, 3, inputA * inputB)(s)
-    { Input = s.Input; Program = newProgram; Output = s.Output; Position = s.Position + 4 }
+let private executeAdd = execute2To1Instruction(fun a b -> a + b)
+
+let private executeMultiply = execute2To1Instruction(fun a b -> a * b)
 
 let private executeReadInput(outputMode: ParameterMode)(s: ComputerState): ComputerState =
     let newProgram = putValue(outputMode, 1, s.Input)(s)
@@ -106,17 +105,9 @@ let private executeJumpIfFalse(inputMode: ParameterMode, pointerArgMode: Paramet
         | _ -> s.Position + 3
     { Input = s.Input; Program = s.Program; Output = s.Output; Position = newPosition }
 
-let private executeLessThan(inputAMode: ParameterMode, inputBMode: ParameterMode, outputMode: ParameterMode)(s: ComputerState): ComputerState =
-    let inputA = getValue(inputAMode, 1)(s)
-    let inputB = getValue(inputBMode, 2)(s)
-    let newProgram = putValue(outputMode, 3, if (inputA < inputB) then 1 else 0)(s)
-    { Input = s.Input; Program = newProgram; Output = s.Output; Position = s.Position + 4 }
+let private executeLessThan = execute2To1Instruction(fun a b -> if (a < b) then 1 else 0)
 
-let private executeEquals(inputAMode: ParameterMode, inputBMode: ParameterMode, outputMode: ParameterMode)(s: ComputerState): ComputerState =
-    let inputA = getValue(inputAMode, 1)(s)
-    let inputB = getValue(inputBMode, 2)(s)
-    let newProgram = putValue(outputMode, 3, if (inputA = inputB) then 1 else 0)(s)
-    { Input = s.Input; Program = newProgram; Output = s.Output; Position = s.Position + 4 }
+let private executeEquals = execute2To1Instruction(fun a b -> if (a = b) then 1 else 0)
 
 let computeNextState(current: ComputerState): ComputerState =
     let currentInstruction = parseInstruction(current.Program.Item(current.Position));
