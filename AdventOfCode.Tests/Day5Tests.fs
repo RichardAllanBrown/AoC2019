@@ -1,12 +1,13 @@
 ﻿module Day5Tests
 
 open Xunit
+open Intcode
 open Day5
 
 let runProgramAndCheckFinalState(program: int list, expectedResult: int list) = 
-    let initialState = ComputerState.parse(program, 0)
+    let initialState = Computer.build(program, List.empty)
     let completedProgram = runToCompletion(initialState)
-    let result = expectedResult = List.last(completedProgram).Program
+    let result = expectedResult = completedProgram.Program.Memory
     Assert.True(result)
 
 [<Fact>]
